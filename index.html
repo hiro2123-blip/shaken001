@@ -199,7 +199,7 @@
             btn.disabled = true; btn.innerText = "送信中..."; btn.classList.add('opacity-50');
 
             const data = {id:Date.now(), shakenDate:selectedDateStr, arrivalDate:calculatedArrivalDate, ss:ss, course:currentCourse, name:n, carModel:m, carNum:c, type:currentType};
-            const url = "https://script.google.com/macros/s/AKfycbzoC8wNpIsIU31zFgbGFXHxrp3qJl6hUfgempnIre2pPLEjPiWQTsVpOZHDrG4vvO2GVA/exec";
+            const url = "https://script.google.com/macros/s/AKfycbzTMQL6TMofb8LrwWZAHiYVcrxS-LVELGylqzdj3pfEKgMKN3MAPOg5aDfDoQwJepSEuw/exec";
             try { await fetch(url, {method:"POST", mode:"no-cors", body:JSON.stringify(data)}); } catch(e){}
             
             loadRes(); reservations.push(data);
