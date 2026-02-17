@@ -88,6 +88,7 @@
                 <button onclick="syncFromCloud()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs hover:bg-green-700 transition shadow-md">🔃 最新に更新</button>
             </div>
             <div id="admin-loading" class="text-center py-10 text-gray-400 hidden">☁️ スプレッドシートを読み込み中...</div>
+            
             <div id="shaken-table-area" class="admin-content overflow-x-auto text-[12px]">
                 <table class="min-w-full text-left bg-white rounded-xl border font-bold">
                     <thead class="bg-blue-600 text-white font-bold">
@@ -96,6 +97,7 @@
                     <tbody id="admin-shaken-list" class="divide-y text-slate-700"></tbody>
                 </table>
             </div>
+            
             <div id="factory-table-area" class="admin-content hidden overflow-x-auto text-[12px]">
                 <table class="min-w-full text-left bg-white rounded-xl border font-bold">
                     <thead class="bg-slate-700 text-white font-bold">
@@ -108,17 +110,17 @@
     </div>
 
     <script>
-        // ★重要★ ここをあなたのGASのURLに書き換えてください
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby3rMAoMeLtMetG46kchSOIRoaL-hMOPlgrUo9-2JsDVg5KdYFfhpBFDnNb03mUPDzhew/exec";
+        // GAS URLの設定
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzc8VeOb0B8IPt26SUYP-BwtNWHBzp3Bfr2hJTEP5ylDthIgC_SR8ffVKCHPZERbPTcCg/exec"; 
         const ADMIN_PASSWORD = "ss1234";
         
         let isAdminAuthenticated = false;
         let reservations = [];
         let currentCourse = '', currentType = '', selectedDateStr = '', calculatedArrivalDate = '', viewDate = new Date();
-        let isShakenkaMode = false; // ★車検課フラグ
+        let isShakenkaMode = false;
         const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
 
-        // ★店舗選択時のパスワードチェックを追加
+        // 店舗選択時の処理
         document.getElementById('ss-name').addEventListener('change', function() {
             if (this.value === "車検課") {
                 const pass = prompt("車検課専用パスワードを入力してください：");
@@ -139,16 +141,16 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
+        // クラウド同期
         async function syncFromCloud() {
-            document.getElementById('admin-loading').classList.remove('hidden');
+            const loading = document.getElementById('admin-loading');
+            loading.classList.remove('hidden');
             try {
                 const res = await fetch(GAS_URL);
-                const data = await res.json();
-                reservations = data;
-                renderAdminTables();
-                renderCalendar();
+                reservations = await res.json();
+                renderAdminTables(); // 同期後に描画
             } catch (e) { alert("同期エラー"); }
-            document.getElementById('admin-loading').classList.add('hidden');
+            loading.classList.add('hidden');
         }
 
         function checkAdminAccess() {
@@ -180,6 +182,7 @@
 
         function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
 
+        // カレンダー描画
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid'); if(!grid) return; grid.innerHTML = '';
             const y = viewDate.getFullYear(), m = viewDate.getMonth();
@@ -195,7 +198,6 @@
                 const dayDiv = document.createElement('div');
                 dayDiv.className = `p-2 border rounded-xl text-center h-14 flex flex-col items-center justify-center calendar-day font-bold transition-all`;
                 
-                // ★車検課モードなら制限解除
                 if (!isShakenkaMode && isHoliday) {
                     dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`;
                 } else if (!isShakenkaMode && dObj < deadline) {
@@ -233,21 +235,48 @@
             document.getElementById('tab-factory').className = (t==='factory') ? "pb-4 px-2 tab-active text-slate-700 border-slate-700 font-bold" : "pb-4 px-2 text-gray-400 font-bold";
         }
 
+        // 管理画面の描画（日付のみ表示に徹底修正）
         function renderAdminTables() {
-            const sl = document.getElementById('admin-shaken-list'); sl.innerHTML = '';
-            reservations.filter(r => r.course && String(r.course).includes('車検')).sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate)).forEach(r => {
-                const dDate = String(r.shakenDate).split(' ')[0]; // 時刻カット
-                sl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50"><td class="p-4 text-blue-700 font-bold">${dDate}</td><td class="p-4">${r.course}</td><td class="p-4">${r.ss}</td><td class="p-4">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 font-mono text-[11px]">${r.carNum}</td></tr>`);
-            });
-            const fl = document.getElementById('admin-factory-list'); fl.innerHTML = '';
-            reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備').sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate)).forEach(r => {
-                let kubun = r.course === 'セーフティ車検' ? 'セーフティ' : '一般整備';
-                const dArr = String(r.arrivalDate || r.shakenDate).split(' ')[0]; // 時刻カット
-                const dSha = r.course === 'セーフティ車検' ? String(r.shakenDate).split(' ')[0] : '-'; // 時刻カット
-                fl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-slate-50"><td class="p-4 text-orange-600 font-bold">${dArr}</td><td class="p-4 text-gray-400 font-normal">${dSha}</td><td class="p-4 text-center font-bold text-[10px]"><span class="bg-slate-100 px-2 py-1 rounded">${kubun}</span></td><td class="p-4">${r.ss}</td><td class="p-4 text-gray-900">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 font-mono text-[11px]">${r.carNum}</td></tr>`);
-            });
+            const sl = document.getElementById('admin-shaken-list'); 
+            sl.innerHTML = '';
+            
+            // 車検予定テーブル
+            reservations.filter(r => r.course && String(r.course).includes('車検'))
+                .sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate))
+                .forEach(r => {
+                    const dDate = String(r.shakenDate).split('T')[0].split(' ')[0]; // 時刻を確実に除去
+                    sl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50">
+                        <td class="p-4 text-blue-700 font-bold">${dDate}</td>
+                        <td class="p-4">${r.course}</td>
+                        <td class="p-4">${r.ss}</td>
+                        <td class="p-4 font-bold text-gray-900">${r.name}</td>
+                        <td class="p-4">${r.carModel}</td>
+                        <td class="p-4 font-mono text-[11px]">${r.carNum}</td>
+                    </tr>`);
+                });
+
+            // 工場入庫予定テーブル
+            const fl = document.getElementById('admin-factory-list'); 
+            fl.innerHTML = '';
+            reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備')
+                .sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate))
+                .forEach(r => {
+                    let kubun = r.course === 'セーフティ車検' ? 'セーフティ' : '一般整備';
+                    const dArr = String(r.arrivalDate || r.shakenDate).split('T')[0].split(' ')[0]; // 入庫日時刻除去
+                    const dSha = r.course === 'セーフティ車検' ? String(r.shakenDate).split('T')[0].split(' ')[0] : '-'; // 車検日時刻除去
+                    fl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-slate-50">
+                        <td class="p-4 text-orange-600 font-bold">${dArr}</td>
+                        <td class="p-4 text-gray-400 font-normal">${dSha}</td>
+                        <td class="p-4 text-center font-bold text-[10px]"><span class="bg-slate-100 px-2 py-1 rounded">${kubun}</span></td>
+                        <td class="p-4">${r.ss}</td>
+                        <td class="p-4 font-bold text-gray-900">${r.name}</td>
+                        <td class="p-4">${r.carModel}</td>
+                        <td class="p-4 font-mono text-[11px]">${r.carNum}</td>
+                    </tr>`);
+                });
         }
 
+        // 初期ロード
         window.onload = function() {
             fetch(GAS_URL).then(res => res.json()).then(data => {
                 reservations = data;
