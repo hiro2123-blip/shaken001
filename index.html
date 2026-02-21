@@ -102,7 +102,7 @@
                     <thead class="bg-blue-600 text-white font-bold">
                         <tr><th class="p-4">車検日</th><th class="p-4">コース</th><th class="p-4">店舗</th><th class="p-4">名前</th><th class="p-4">車種</th><th class="p-4">ナンバー</th></tr>
                     </thead>
-                    <tbody id="admin-shaken-list" class="divide-y"></tbody>
+                    <tbody id="admin-shaken-list" class="divide-y text-slate-700"></tbody>
                 </table>
             </div>
             <div id="factory-table-area" class="admin-content hidden overflow-x-auto text-[12px]">
@@ -110,7 +110,7 @@
                     <thead class="bg-slate-700 text-white font-bold">
                         <tr><th class="p-4">入庫日</th><th class="p-4">車検日</th><th class="p-4">区分</th><th class="p-4">店舗</th><th class="p-4">名前</th><th class="p-4">車種</th><th class="p-4">ナンバー</th></tr>
                     </thead>
-                    <tbody id="admin-factory-list" class="divide-y"></tbody>
+                    <tbody id="admin-factory-list" class="divide-y text-slate-700"></tbody>
                 </table>
             </div>
         </div>
@@ -127,178 +127,4 @@
         let currentCourse = '', currentType = '', selectedDateStr = '', calculatedArrivalDate = '', viewDate = new Date();
         let isShakenkaMode = false;
 
-        // 営業時間の判定 (22:00 ～ 07:00 は不可)
-        function checkBusinessHours() {
-            const now = new Date();
-            const hour = now.getHours();
-            const isOutOfHours = (hour >= 22 || hour < 7);
-            const notice = document.getElementById('maintenance-notice');
-            const mainArea = document.getElementById('main-content-area');
-            const submitBtn = document.getElementById('submit-btn');
-
-            if (isOutOfHours) {
-                notice.classList.remove('hidden');
-                mainArea.classList.add('out-of-hours');
-                if(submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerText = "只今受付時間外です";
-                    submitBtn.classList.replace('bg-blue-600', 'bg-gray-400');
-                }
-                return false;
-            }
-            return true;
-        }
-
-        // 店舗選択時のパスワードチェック
-        document.getElementById('ss-name').addEventListener('change', function() {
-            if (this.value === "車検課") {
-                const pass = prompt("車検課専用パスワードを入力してください：");
-                if (pass === "ss1234") {
-                    isShakenkaMode = true;
-                    alert("認証成功：全日程での予約が可能です。");
-                } else {
-                    alert("パスワードが違います。");
-                    this.value = ""; 
-                    isShakenkaMode = false;
-                }
-            } else { isShakenkaMode = false; }
-            renderCalendar();
-        });
-
-        function showSection(id) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        async function syncFromCloud() {
-            document.getElementById('admin-loading').classList.remove('hidden');
-            try {
-                const res = await fetch(GAS_URL);
-                reservations = await res.json();
-                renderAdminTables();
-            } catch (e) { alert("同期エラー"); }
-            document.getElementById('admin-loading').classList.add('hidden');
-        }
-
-        function checkAdminAccess() {
-            if (isAdminAuthenticated) { showSection('admin-view'); syncFromCloud(); }
-            else {
-                const input = prompt("管理用パスワードを入力してください：");
-                if (input === ADMIN_PASSWORD) { isAdminAuthenticated = true; showSection('admin-view'); syncFromCloud(); }
-                else if (input !== null) { alert("パスワード不一致"); }
-            }
-        }
-
-        function isClosedDay(date) {
-            const d = new Date(date);
-            const ds = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-            return d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.includes(ds);
-        }
-
-        function getPreviousBusinessDay(ds) {
-            let d = new Date(ds);
-            do { d.setDate(d.getDate() - 1); } while (isClosedDay(d));
-            return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-        }
-
-        function selectCourse(n, t) {
-            if (!checkBusinessHours()) return;
-            currentCourse = n; currentType = t;
-            document.getElementById('display-course-name').innerText = n;
-            renderCalendar(); showSection('booking-section');
-        }
-
-        function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendar-grid'); if(!grid) return; grid.innerHTML = '';
-            const y = viewDate.getFullYear(), m = viewDate.getMonth();
-            document.getElementById('calendar-month').innerText = `${y}年 ${m+1}月`;
-            ['日','月','火','水','木','金','土'].forEach(d => grid.insertAdjacentHTML('beforeend', `<div class="pb-2 text-center text-gray-400 font-bold">${d}</div>`));
-            const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
-            const deadline = new Date(); deadline.setDate(deadline.getDate() + 4);
-            for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
-            for(let i=1; i<=last; i++) {
-                const dObj = new Date(y, m, i), dKey = `${y}/${m+1}/${i}`;
-                const count = reservations.filter(r => String(r.shakenDate).split(' ')[0] === dKey && String(r.course).includes('車検')).length;
-                const isHoliday = isClosedDay(dObj);
-                const dayDiv = document.createElement('div');
-                dayDiv.className = `p-2 border rounded-xl text-center h-14 flex flex-col items-center justify-center calendar-day font-bold transition-all`;
-                
-                if (!isShakenkaMode && isHoliday) {
-                    dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`;
-                } else if (!isShakenkaMode && dObj < deadline) {
-                    dayDiv.classList.add('disabled'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-gray-300">締切</span>`;
-                } else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) {
-                    dayDiv.classList.add('full'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] font-bold">満</span>`;
-                } else {
-                    dayDiv.classList.add('available'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-blue-500">○</span>`;
-                    dayDiv.onclick = () => {
-                        selectedDateStr = dKey;
-                        document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected-day'));
-                        dayDiv.classList.add('selected-day');
-                        document.getElementById('shaken-date-display').innerText = dKey;
-                        calculatedArrivalDate = (currentCourse === 'セーフティ車検') ? getPreviousBusinessDay(dKey) : dKey;
-                    };
-                }
-                grid.appendChild(dayDiv);
-            }
-        }
-
-        async function completeBooking() {
-            if (!checkBusinessHours()) return;
-            const btn = document.getElementById('submit-btn');
-            const ss = document.getElementById('ss-name').value, n = document.getElementById('user-name').value, m = document.getElementById('car-model').value, c = document.getElementById('car-number').value;
-            if (!ss || !n || !m || !c || !selectedDateStr) return alert('入力不足');
-            btn.disabled = true; btn.innerText = "送信中...";
-            const data = {id:Date.now(), shakenDate:selectedDateStr, arrivalDate:calculatedArrivalDate, ss:ss, course:currentCourse, name:n, carModel:m, carNum:c, type:currentType};
-            try { await fetch(GAS_URL, {method:"POST", mode:"no-cors", body:JSON.stringify(data)}); } catch(e){}
-            alert('予約完了'); location.reload(); 
-        }
-
-        function switchAdminTab(t) {
-            document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById(`${t}-table-area`).classList.remove('hidden');
-            document.getElementById('tab-shaken').className = (t==='shaken') ? "pb-4 px-2 tab-active text-blue-600 font-bold" : "pb-4 px-2 text-gray-400 font-bold";
-            document.getElementById('tab-factory').className = (t==='factory') ? "pb-4 px-2 tab-active text-slate-700 border-slate-700 font-bold" : "pb-4 px-2 text-gray-400 font-bold";
-        }
-
-        // 管理画面の時刻カット対応描画
-        function renderAdminTables() {
-            const sl = document.getElementById('admin-shaken-list'); sl.innerHTML = '';
-            reservations.filter(r => r.course && String(r.course).includes('車検'))
-                .sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate))
-                .forEach(r => {
-                    const dDate = String(r.shakenDate).split('T')[0].split(' ')[0];
-                    sl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50">
-                        <td class="p-4 text-blue-700 font-bold">${dDate}</td><td class="p-4">${r.course}</td><td class="p-4">${r.ss}</td><td class="p-4 font-bold text-gray-900">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 font-mono text-[11px]">${r.carNum}</td>
-                    </tr>`);
-                });
-
-            const fl = document.getElementById('admin-factory-list'); fl.innerHTML = '';
-            reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備')
-                .sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate))
-                .forEach(r => {
-                    let kubun = r.course === 'セーフティ車検' ? 'セーフティ' : '一般整備';
-                    const dArr = String(r.arrivalDate || r.shakenDate).split('T')[0].split(' ')[0];
-                    const dSha = r.course === 'セーフティ車検' ? String(r.shakenDate).split('T')[0].split(' ')[0] : '-';
-                    fl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-slate-50">
-                        <td class="p-4 text-orange-600 font-bold">${dArr}</td><td class="p-4 text-gray-400 font-normal">${dSha}</td><td class="p-4 text-center font-bold text-[10px]"><span class="bg-slate-100 px-2 py-1 rounded">${kubun}</span></td><td class="p-4">${r.ss}</td><td class="p-4 font-bold text-gray-900">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 font-mono text-[11px]">${r.carNum}</td>
-                    </tr>`);
-                });
-        }
-
-        window.onload = function() {
-            checkBusinessHours();
-            fetch(GAS_URL).then(res => res.json()).then(data => {
-                reservations = data;
-                document.getElementById('main-loading').classList.add('hidden');
-                renderCalendar();
-            }).catch(e => {
-                document.getElementById('main-loading').innerText = "通信エラー";
-                renderCalendar();
-            });
-        };
-    </script>
-</body>
-</html>
+        // 営業時間の判定
