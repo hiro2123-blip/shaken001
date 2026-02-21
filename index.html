@@ -106,25 +106,4 @@
                 </table>
             </div>
             <div id="factory-table-area" class="admin-content hidden overflow-x-auto text-[12px]">
-                <table class="min-w-full text-left bg-white rounded-xl border font-bold text-slate-700">
-                    <thead class="bg-slate-700 text-white font-bold">
-                        <tr><th class="p-4">入庫日</th><th class="p-4">車検日</th><th class="p-4">区分</th><th class="p-4">店舗</th><th class="p-4">名前</th><th class="p-4">車種</th><th class="p-4">ナンバー</th></tr>
-                    </thead>
-                    <tbody id="admin-factory-list" class="divide-y text-slate-700"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // 設定値
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzZl5UIK9kz5isn3TiDJnqGOTGe0xSiSJ9KnbxYYvyb8st8yIiK6M9yilZvTwzlCVdxAA/exec"; 
-        const ADMIN_PASSWORD = "ss1234";
-        const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
-        
-        let isAdminAuthenticated = false;
-        let reservations = [];
-        let currentCourse = '', currentType = '', selectedDateStr = '', calculatedArrivalDate = '', viewDate = new Date();
-        let isShakenkaMode = false;
-
-        // 営業時間の判定
+                <table class="min-w-full text-left bg
