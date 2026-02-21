@@ -14,6 +14,8 @@
         .calendar-day.available:hover { background-color: #ebf8ff; cursor: pointer; }
         .selected-day { background-color: #3b82f6 !important; color: white !important; }
         .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+        /* 時間外用のスタイル */
+        .out-of-hours { filter: grayscale(1); opacity: 0.6; pointer-events: none; cursor: not-allowed; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-2 md:p-6 text-slate-900 font-bold">
@@ -28,53 +30,60 @@
             </div>
         </div>
 
-        <div id="course-selection-section" class="view-section">
-            <div class="text-center mb-6"><p class="text-red-600 text-xs italic">※土・日・祝祭日は定休日です</p></div>
-            <div id="main-loading" class="text-center py-4 text-blue-500 animate-pulse text-sm">最新の予約状況を確認中...</div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                <button onclick="selectCourse('スタンダード車検', 'shaken')" class="group bg-white border-2 border-blue-100 hover:border-blue-500 rounded-3xl p-8 transition shadow-sm">
-                    <div class="text-4xl mb-4">⏱️</div>
-                    <h3 class="text-xl font-bold text-blue-900">スタンダード車検</h3>
-                    <div class="mt-8 bg-blue-50 py-3 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition text-sm">選択する</div>
-                </button>
-                <button onclick="selectCourse('セーフティ車検', 'shaken')" class="group bg-white border-2 border-orange-100 hover:border-orange-500 rounded-3xl p-8 transition shadow-sm">
-                    <div class="text-4xl mb-4">🛡️</div>
-                    <h3 class="text-xl font-bold text-orange-900">セーフティ車検</h3>
-                    <div class="mt-8 bg-orange-50 py-3 rounded-xl text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition text-sm">選択する</div>
-                </button>
-                <button onclick="selectCourse('一般整備', 'factory')" class="group bg-white border-2 border-green-100 hover:border-green-500 rounded-3xl p-8 transition shadow-sm">
-                    <div class="text-4xl mb-4">🔧</div>
-                    <h3 class="text-xl font-bold text-green-900">一般整備・修理</h3>
-                    <div class="mt-8 bg-green-50 py-3 rounded-xl text-green-600 group-hover:bg-green-600 group-hover:text-white transition text-sm">選択する</div>
-                </button>
-            </div>
+        <div id="maintenance-notice" class="hidden mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-700 rounded-2xl text-center">
+            <p class="text-lg font-black">只今、受付時間外です（22:00 ～ 翌07:00）</p>
+            <p class="text-xs mt-1">恐れ入りますが、受付時間内にお手続きをお願いいたします。</p>
         </div>
 
-        <div id="booking-section" class="view-section hidden">
-            <button onclick="showSection('course-selection-section')" class="text-blue-500 mb-6 font-bold flex items-center">＜ 戻る</button>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div class="bg-white border rounded-2xl p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-6 bg-slate-800 text-white p-3 rounded-xl">
-                        <button onclick="changeMonth(-1)" class="px-4">＜</button>
-                        <h3 id="calendar-month"></h3>
-                        <button onclick="changeMonth(1)" class="px-4">＞</button>
-                    </div>
-                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center text-[10px]"></div>
+        <div id="main-content-area">
+            <div id="course-selection-section" class="view-section">
+                <div class="text-center mb-6"><p class="text-red-600 text-xs italic">※土・日・祝祭日は定休日です</p></div>
+                <div id="main-loading" class="text-center py-4 text-blue-500 animate-pulse text-sm">最新の予約状況を確認中...</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <button onclick="selectCourse('スタンダード車検', 'shaken')" class="course-btn group bg-white border-2 border-blue-100 hover:border-blue-500 rounded-3xl p-8 transition shadow-sm">
+                        <div class="text-4xl mb-4">⏱️</div>
+                        <h3 class="text-xl font-bold text-blue-900">スタンダード車検</h3>
+                        <div class="mt-8 bg-blue-50 py-3 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition text-sm">選択する</div>
+                    </button>
+                    <button onclick="selectCourse('セーフティ車検', 'shaken')" class="course-btn group bg-white border-2 border-orange-100 hover:border-orange-500 rounded-3xl p-8 transition shadow-sm">
+                        <div class="text-4xl mb-4">🛡️</div>
+                        <h3 class="text-xl font-bold text-orange-900">セーフティ車検</h3>
+                        <div class="mt-8 bg-orange-50 py-3 rounded-xl text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition text-sm">選択する</div>
+                    </button>
+                    <button onclick="selectCourse('一般整備', 'factory')" class="course-btn group bg-white border-2 border-green-100 hover:border-green-500 rounded-3xl p-8 transition shadow-sm">
+                        <div class="text-4xl mb-4">🔧</div>
+                        <h3 class="text-xl font-bold text-green-900">一般整備・修理</h3>
+                        <div class="mt-8 bg-green-50 py-3 rounded-xl text-green-600 group-hover:bg-green-600 group-hover:text-white transition text-sm">選択する</div>
+                    </button>
                 </div>
-                <div class="bg-gray-50 p-8 rounded-3xl border space-y-4">
-                    <select id="ss-name" class="w-full border rounded-lg p-3 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">店舗を選択</option>
-                        <option value="車検課" style="background-color: #eff6ff; font-weight: bold;">【専用】車検課</option>
-                        <option value="板橋ss">板橋ss</option><option value="志村ss">志村ss</option><option value="小茂根ss">小茂根ss</option><option value="赤羽西ss">赤羽西ss</option><option value="東坂下ss">東坂下ss</option><option value="高島平ss">高島平ss</option><option value="武蔵関ss">武蔵関ss</option>
-                    </select>
-                    <input type="text" id="user-name" class="w-full border rounded-lg p-3 text-sm" placeholder="お名前">
-                    <input type="text" id="car-model" class="w-full border rounded-lg p-3 text-sm" placeholder="車種">
-                    <input type="text" id="car-number" class="w-full border rounded-lg p-3 text-sm" placeholder="ナンバー">
-                    <div class="bg-white p-4 rounded-xl border border-blue-100 text-sm shadow-sm font-bold text-blue-800 italic">
-                        <p id="display-course-name" class="text-lg"></p>
-                        <p class="mt-1">作業/車検日：<span id="shaken-date-display">-</span></p>
+            </div>
+
+            <div id="booking-section" class="view-section hidden">
+                <button onclick="showSection('course-selection-section')" class="text-blue-500 mb-6 font-bold flex items-center">＜ 戻る</button>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div class="bg-white border rounded-2xl p-6 shadow-sm">
+                        <div class="flex justify-between items-center mb-6 bg-slate-800 text-white p-3 rounded-xl">
+                            <button onclick="changeMonth(-1)" class="px-4">＜</button>
+                            <h3 id="calendar-month"></h3>
+                            <button onclick="changeMonth(1)" class="px-4">＞</button>
+                        </div>
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center text-[10px]"></div>
                     </div>
-                    <button id="submit-btn" onclick="completeBooking()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition">予約を確定する</button>
+                    <div class="bg-gray-50 p-8 rounded-3xl border space-y-4">
+                        <select id="ss-name" class="w-full border rounded-lg p-3 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">店舗を選択</option>
+                            <option value="車検課" style="background-color: #eff6ff; font-weight: bold;">【専用】車検課</option>
+                            <option value="板橋ss">板橋ss</option><option value="志村ss">志村ss</option><option value="小茂根ss">小茂根ss</option><option value="赤羽西ss">赤羽西ss</option><option value="東坂下ss">東坂下ss</option><option value="高島平ss">高島平ss</option><option value="武蔵関ss">武蔵関ss</option>
+                        </select>
+                        <input type="text" id="user-name" class="w-full border rounded-lg p-3 text-sm" placeholder="お名前">
+                        <input type="text" id="car-model" class="w-full border rounded-lg p-3 text-sm" placeholder="車種">
+                        <input type="text" id="car-number" class="w-full border rounded-lg p-3 text-sm" placeholder="ナンバー">
+                        <div class="bg-white p-4 rounded-xl border border-blue-100 text-sm shadow-sm font-bold text-blue-800 italic">
+                            <p id="display-course-name" class="text-lg"></p>
+                            <p class="mt-1">作業/車検日：<span id="shaken-date-display">-</span></p>
+                        </div>
+                        <button id="submit-btn" onclick="completeBooking()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition">予約を確定する</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,7 +97,6 @@
                 <button onclick="syncFromCloud()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs hover:bg-green-700 transition shadow-md">🔃 最新に更新</button>
             </div>
             <div id="admin-loading" class="text-center py-10 text-gray-400 hidden">☁️ スプレッドシートを読み込み中...</div>
-            
             <div id="shaken-table-area" class="admin-content overflow-x-auto text-[12px]">
                 <table class="min-w-full text-left bg-white rounded-xl border font-bold">
                     <thead class="bg-blue-600 text-white font-bold">
@@ -97,7 +105,6 @@
                     <tbody id="admin-shaken-list" class="divide-y text-slate-700"></tbody>
                 </table>
             </div>
-            
             <div id="factory-table-area" class="admin-content hidden overflow-x-auto text-[12px]">
                 <table class="min-w-full text-left bg-white rounded-xl border font-bold">
                     <thead class="bg-slate-700 text-white font-bold">
@@ -110,7 +117,6 @@
     </div>
 
     <script>
-        // GAS URLの設定
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzc8VeOb0B8IPt26SUYP-BwtNWHBzp3Bfr2hJTEP5ylDthIgC_SR8ffVKCHPZERbPTcCg/exec"; 
         const ADMIN_PASSWORD = "ss1234";
         
@@ -120,7 +126,29 @@
         let isShakenkaMode = false;
         const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
 
-        // 店舗選択時の処理
+        // ★時間外チェック機能（初期化時と予約確定時に実行）
+        function checkBusinessHours() {
+            const now = new Date();
+            const hour = now.getHours();
+            const isOutOfHours = (hour >= 22 || hour < 7);
+            
+            const notice = document.getElementById('maintenance-notice');
+            const mainArea = document.getElementById('main-content-area');
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (isOutOfHours) {
+                notice.classList.remove('hidden');
+                mainArea.classList.add('out-of-hours');
+                if(submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "只今受付時間外です";
+                    submitBtn.classList.replace('bg-blue-600', 'bg-gray-400');
+                }
+                return false;
+            }
+            return true;
+        }
+
         document.getElementById('ss-name').addEventListener('change', function() {
             if (this.value === "車検課") {
                 const pass = prompt("車検課専用パスワードを入力してください：");
@@ -141,14 +169,13 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // クラウド同期
         async function syncFromCloud() {
             const loading = document.getElementById('admin-loading');
             loading.classList.remove('hidden');
             try {
                 const res = await fetch(GAS_URL);
                 reservations = await res.json();
-                renderAdminTables(); // 同期後に描画
+                renderAdminTables();
             } catch (e) { alert("同期エラー"); }
             loading.classList.add('hidden');
         }
@@ -175,6 +202,7 @@
         }
 
         function selectCourse(n, t) {
+            if (!checkBusinessHours()) return; // コース選択時にも再チェック
             currentCourse = n; currentType = t;
             document.getElementById('display-course-name').innerText = n;
             renderCalendar(); showSection('booking-section');
@@ -182,7 +210,6 @@
 
         function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
 
-        // カレンダー描画
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid'); if(!grid) return; grid.innerHTML = '';
             const y = viewDate.getFullYear(), m = viewDate.getMonth();
@@ -219,6 +246,8 @@
         }
 
         async function completeBooking() {
+            if (!checkBusinessHours()) return; // 確定前にも最終チェック
+
             const btn = document.getElementById('submit-btn');
             const ss = document.getElementById('ss-name').value, n = document.getElementById('user-name').value, m = document.getElementById('car-model').value, c = document.getElementById('car-number').value;
             if (!ss || !n || !m || !c || !selectedDateStr) return alert('入力不足');
@@ -235,49 +264,29 @@
             document.getElementById('tab-factory').className = (t==='factory') ? "pb-4 px-2 tab-active text-slate-700 border-slate-700 font-bold" : "pb-4 px-2 text-gray-400 font-bold";
         }
 
-        // 管理画面の描画（日付のみ表示に徹底修正）
         function renderAdminTables() {
-            const sl = document.getElementById('admin-shaken-list'); 
-            sl.innerHTML = '';
-            
-            // 車検予定テーブル
-            reservations.filter(r => r.course && String(r.course).includes('車検'))
-                .sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate))
-                .forEach(r => {
-                    const dDate = String(r.shakenDate).split('T')[0].split(' ')[0]; // 時刻を確実に除去
-                    sl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50">
-                        <td class="p-4 text-blue-700 font-bold">${dDate}</td>
-                        <td class="p-4">${r.course}</td>
-                        <td class="p-4">${r.ss}</td>
-                        <td class="p-4 font-bold text-gray-900">${r.name}</td>
-                        <td class="p-4">${r.carModel}</td>
-                        <td class="p-4 font-mono text-[11px]">${r.carNum}</td>
-                    </tr>`);
-                });
-
-            // 工場入庫予定テーブル
-            const fl = document.getElementById('admin-factory-list'); 
-            fl.innerHTML = '';
-            reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備')
-                .sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate))
-                .forEach(r => {
-                    let kubun = r.course === 'セーフティ車検' ? 'セーフティ' : '一般整備';
-                    const dArr = String(r.arrivalDate || r.shakenDate).split('T')[0].split(' ')[0]; // 入庫日時刻除去
-                    const dSha = r.course === 'セーフティ車検' ? String(r.shakenDate).split('T')[0].split(' ')[0] : '-'; // 車検日時刻除去
-                    fl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-slate-50">
-                        <td class="p-4 text-orange-600 font-bold">${dArr}</td>
-                        <td class="p-4 text-gray-400 font-normal">${dSha}</td>
-                        <td class="p-4 text-center font-bold text-[10px]"><span class="bg-slate-100 px-2 py-1 rounded">${kubun}</span></td>
-                        <td class="p-4">${r.ss}</td>
-                        <td class="p-4 font-bold text-gray-900">${r.name}</td>
-                        <td class="p-4">${r.carModel}</td>
-                        <td class="p-4 font-mono text-[11px]">${r.carNum}</td>
-                    </tr>`);
-                });
+            const sl = document.getElementById('admin-shaken-list'); sl.innerHTML = '';
+            reservations.filter(r => r.course && String(r.course).includes('車検')).sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate)).forEach(r => {
+                const dDate = String(r.shakenDate).split('T')[0].split(' ')[0];
+                sl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50">
+                    <td class="p-4 text-blue-700 font-bold">${dDate}</td><td class="p-4">${r.course}</td><td class="p-4">${r.ss}</td><td class="p-4 font-bold text-gray-900">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 font-mono text-[11px]">${r.carNum}</td>
+                </tr>`);
+            });
+            const fl = document.getElementById('admin-factory-list'); fl.innerHTML = '';
+            reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備').sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate)).forEach(r => {
+                let kubun = r.course === 'セーフティ車検' ? 'セーフティ' : '一般整備';
+                const dArr = String(r.arrivalDate || r.shakenDate).split('T')[0].split(' ')[0];
+                const dSha = r.course === 'セーフティ車検' ? String(r.shakenDate).split('T')[0].split(' ')[0] : '-';
+                fl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-slate-50">
+                    <td class="p-4 text-orange-600 font-bold">${dArr}</td><td class="p-4 text-gray-400 font-normal">${dSha}</td><td class="p-4 text-center font-bold text-[10px]"><span class="bg-slate-100 px-2 py-1 rounded">${kubun}</span></td><td class="p-4">${r.ss}</td><td class="p-4 font-bold text-gray-900">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 font-mono text-[11px]">${r.carNum}</td>
+                </tr>`);
+            });
         }
 
-        // 初期ロード
         window.onload = function() {
+            // ★まず営業時間をチェック
+            checkBusinessHours();
+
             fetch(GAS_URL).then(res => res.json()).then(data => {
                 reservations = data;
                 document.getElementById('main-loading').classList.add('hidden');
