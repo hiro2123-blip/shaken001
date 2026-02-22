@@ -142,7 +142,7 @@
 
         document.getElementById('ss-name').addEventListener('change', function() {
             if (this.value === "車検課") {
-                if (prompt("車検課パスワード") === ADMIN_PASSWORD) { isShakenkaMode = true; alert("認証成功"); }
+                if (prompt("車検課パスワード") === ADMIN_PASSWORD) { isShakenkaMode = true; alert("認証成功：全日程解放"); }
                 else { this.value = ""; isShakenkaMode = false; }
             } else { isShakenkaMode = false; }
             renderCalendar();
@@ -158,7 +158,7 @@
                 const res = await fetch(GAS_URL);
                 reservations = await res.json();
                 renderAdminTables();
-            } catch (e) { console.error("同期失敗"); }
+            } catch (e) { console.error("同期失敗", e); }
         }
 
         function isClosedDay(date) {
