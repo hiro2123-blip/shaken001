@@ -245,7 +245,7 @@
             if (!ss || !n || !m || !c || !selectedDateStr) return alert('入力不足');
             document.getElementById('submit-btn').disabled = true;
             
-            // ★独立したデータ「memo」としてGASへ送信する
+            // ★独立したデータ「memo」としてGASへ送信する（カッコで合体させません）
             const data = {id:Date.now(), shakenDate:selectedDateStr, arrivalDate:calculatedArrivalDate, ss, course:currentCourse, name:n, carModel:m, carNum:c, type:currentType, memo:memo};
             
             try {
@@ -268,7 +268,7 @@
                 sl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-blue-50"><td class="p-4 font-bold text-blue-700">${formatDateOnly(r.shakenDate)}</td><td class="p-4">${r.course}</td><td class="p-4">${r.ss}</td><td class="p-4 font-bold">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4 text-[13px] font-mono">${r.carNum}</td></tr>`);
             });
             
-            // ★工場入庫予定のテーブルに「修理メモ」の列（一番右）を追加しました
+            // ★工場入庫予定のテーブルに「修理メモ」の列を表示
             const fl = document.getElementById('admin-factory-list'); fl.innerHTML = '';
             reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備').sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate)).forEach(r => {
                 fl.insertAdjacentHTML('beforeend', `<tr class="hover:bg-slate-50">
