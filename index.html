@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>車検予約システム v28.5 最終版</title>
+    <title>車検予約システム v28.6 車検課フル開放版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
@@ -61,7 +61,9 @@
                     </div>
                     <div class="bg-gray-50 p-8 rounded-3xl border space-y-4">
                         <select id="ss-name" class="w-full border rounded-lg p-3 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">店舗を選択</option><option value="車検課">【専用】車検課</option><option value="板橋ss">板橋ss</option><option value="志村ss">志村ss</option><option value="小茂根ss">小茂根ss</option><option value="赤羽西ss">赤羽西ss</option><option value="東坂下ss">東坂下ss</option><option value="高島平ss">高島平ss</option><option value="武蔵関ss">武蔵関ss</option>
+                            <option value="">店舗を選択</option>
+                            <option value="車検課" style="background-color: #eff6ff; font-weight: bold; color: #1e40af;">【専用】車検課</option>
+                            <option value="板橋ss">板橋ss</option><option value="志村ss">志村ss</option><option value="小茂根ss">小茂根ss</option><option value="赤羽西ss">赤羽西ss</option><option value="東坂下ss">東坂下ss</option><option value="高島平ss">高島平ss</option><option value="武蔵関ss">武蔵関ss</option>
                         </select>
                         <input type="text" id="user-name" class="w-full border rounded-lg p-3 text-sm" placeholder="お名前">
                         <input type="text" id="car-model" class="w-full border rounded-lg p-3 text-sm" placeholder="車種">
@@ -83,7 +85,7 @@
                     <button id="tab-shaken" onclick="switchAdminTab('shaken')" class="pb-4 px-4 tab-active text-blue-600 font-bold whitespace-nowrap">📋 車検予定</button>
                     <button id="tab-factory" onclick="switchAdminTab('factory')" class="pb-4 px-4 text-gray-400 font-bold whitespace-nowrap">🔧 工場入庫予定</button>
                 </div>
-                <button onclick="syncFromCloud()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold font-bold">🔃 更新</button>
+                <button onclick="syncFromCloud()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold">🔃 更新</button>
             </div>
             <div id="shaken-table-area" class="admin-content overflow-x-auto">
                 <table class="min-w-full text-left bg-white border text-sm font-bold">
@@ -101,14 +103,37 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbw0YKwOdo14sVL6zkEqqSOy4Clz25GwBwjJwCHEB-BMb2Vu4YcSKACDk_8DgM88eV60/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzc8VeOb0B8IPt26SUYP-BwtNWHBzp3Bfr2hJTEP5ylDthIgC_SR8ffVKCHPZERbPTcCg/exec"; 
         const ADMIN_PASSWORD = "ss1234";
         const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
         let isAdminAuthenticated = false, reservations = [], currentCourse = '', currentType = '', selectedDateStr = '', calculatedArrivalDate = '', viewDate = new Date(), isShakenkaMode = false;
 
         function formatDateOnly(dateStr) { if (!dateStr) return "-"; return String(dateStr).split('T')[0].split(' ')[0].replace(/-/g, '/'); }
         function checkBusinessHours() { const hour = new Date().getHours(); const out = (hour >= 22 || hour < 7); document.getElementById('maintenance-notice').classList.toggle('hidden', !out); document.getElementById('main-content-area').classList.toggle('out-of-hours', out); return !out; }
-        function checkAdminAccess() { if (isAdminAuthenticated) { showSection('admin-view'); syncFromCloud(); } else if (prompt("管理パス") === ADMIN_PASSWORD) { isAdminAuthenticated = true; showSection('admin-view'); syncFromCloud(); } }
+        
+        function checkAdminAccess() { 
+            if (isAdminAuthenticated) { showSection('admin-view'); syncFromCloud(); } 
+            else if (prompt("管理画面用パスワードを入力してください") === ADMIN_PASSWORD) { isAdminAuthenticated = true; showSection('admin-view'); syncFromCloud(); } 
+        }
+
+        // ★ 車検課を選択したときのパスワードチェック処理を強化
+        document.getElementById('ss-name').addEventListener('change', function() {
+            if (this.value === "車検課") {
+                const pass = prompt("車検課専用パスワードを入力してください");
+                if (pass === ADMIN_PASSWORD) {
+                    isShakenkaMode = true;
+                    alert("車検課モード：すべての制限を解除しました");
+                } else {
+                    alert("パスワードが違います");
+                    this.value = "";
+                    isShakenkaMode = false;
+                }
+            } else {
+                isShakenkaMode = false;
+            }
+            renderCalendar(); // 選択後にカレンダーを再描画して反映
+        });
+
         function showSection(id) { document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
         async function syncFromCloud() { try { const res = await fetch(GAS_URL); reservations = await res.json(); renderAdminTables(); } catch (e) { console.error(e); } }
         function isClosedDay(date) { const d = new Date(date), ds = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; return d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.includes(ds); }
@@ -132,6 +157,7 @@
             ['日','月','火','水','木','金','土'].forEach(d => grid.insertAdjacentHTML('beforeend', `<div class="pb-2 text-gray-400 font-bold">${d}</div>`));
             const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
             const deadline = new Date(); deadline.setDate(deadline.getDate() + 4);
+            
             for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
             for(let i=1; i<=last; i++) {
                 const dObj = new Date(y, m, i), dKey = `${y}/${m+1}/${i}`;
@@ -139,10 +165,19 @@
                 const isHoliday = isClosedDay(dObj);
                 const dayDiv = document.createElement('div');
                 dayDiv.className = `p-2 border rounded-xl text-center h-14 flex flex-col items-center justify-center calendar-day font-bold transition-all`;
-                if (!isShakenkaMode && isHoliday) { dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`; }
-                else if (!isShakenkaMode && dObj < deadline) { dayDiv.classList.add('disabled'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-gray-300">締切</span>`; }
-                else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) { dayDiv.classList.add('full'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">満</span>`; }
+                
+                // ★ 車検課モード(isShakenkaMode)がONの時は、以下のif文（制限）をすべて飛ばして「available」へ行きます
+                if (!isShakenkaMode && isHoliday) { 
+                    dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`; 
+                }
+                else if (!isShakenkaMode && dObj < deadline) { 
+                    dayDiv.classList.add('disabled'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-gray-300">締切</span>`; 
+                }
+                else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) { 
+                    dayDiv.classList.add('full'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">満</span>`; 
+                }
                 else {
+                    // 全開放 または 制限をクリアした日
                     dayDiv.classList.add('available'); dayDiv.innerHTML = `<span>${i}</span><span class="text-blue-500">○</span>`;
                     dayDiv.onclick = () => {
                         selectedDateStr = dKey;
@@ -161,17 +196,14 @@
             if (!ss || !n || !m || !c || !selectedDateStr) return alert('入力不足');
             document.getElementById('submit-btn').disabled = true;
             const data = {id:Date.now(), shakenDate:selectedDateStr, arrivalDate:calculatedArrivalDate, ss:ss, course:currentCourse, name:n, carModel:m, carNum:c, type:currentType, memo:memo};
-            try { 
-                await fetch(GAS_URL, {method:"POST", mode:"no-cors", body:JSON.stringify(data)}); 
-                alert('予約完了'); location.reload(); 
-            } catch(e){ alert('エラー'); }
+            try { await fetch(GAS_URL, {method:"POST", mode:"no-cors", body:JSON.stringify(data)}); alert('予約完了'); location.reload(); } catch(e){ alert('エラー'); }
         }
 
         function switchAdminTab(t) {
             document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden'));
             document.getElementById(`${t}-table-area`).classList.remove('hidden');
-            document.getElementById('tab-shaken').className = (t==='shaken') ? "pb-4 px-4 tab-active text-blue-600" : "pb-4 px-4 text-gray-400";
-            document.getElementById('tab-factory').className = (t==='factory') ? "pb-4 px-4 tab-active text-slate-700 border-b-4 border-slate-700" : "pb-4 px-4 text-gray-400";
+            document.getElementById('tab-shaken').className = (t==='shaken') ? "pb-4 px-4 tab-active text-blue-600 font-bold whitespace-nowrap" : "pb-4 px-4 text-gray-400 font-bold whitespace-nowrap";
+            document.getElementById('tab-factory').className = (t==='factory') ? "pb-4 px-4 tab-active text-slate-700 font-bold border-b-4 border-slate-700 whitespace-nowrap" : "pb-4 px-4 text-gray-400 font-bold whitespace-nowrap";
         }
 
         function renderAdminTables() {
