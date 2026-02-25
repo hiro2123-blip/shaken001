@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>車検予約システム v28.8</title>
+    <title>車検予約システム v28.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
@@ -103,23 +103,19 @@
     </div>
 
     <script>
-        // 設定情報の修正
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzsvf_vaQqw7kek_OiUf_VuFsIM29TUXKRy65Y9BD6kdZhfyhgpkJwPGkfrE1U_Hz7KwQ/exec"; 
         const ADMIN_PASSWORD = "ss1234";
         const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
         
         let isAdminAuthenticated = false;
-        let reservations = []
-        let currentCourse = '';
-        let currentType = '';
-        let selectedDateStr = '';
-        let calculatedArrivalDate = '';
-        let viewDate = new Date();
-        let isShakenkaMode = false;
+        let reservations = [];
+        let currentCourse = '', currentType = '', selectedDateStr = '', calculatedArrivalDate = '';
+        let viewDate = new Date(), isShakenkaMode = false;
 
         function formatDateOnly(dateStr) { if (!dateStr) return "-"; return String(dateStr).split('T')[0].split(' ')[0].replace(/-/g, '/'); }
         
         function checkBusinessHours() { 
+            if (isShakenkaMode) return true;
             const hour = new Date().getHours(); 
             const out = (hour >= 22 || hour < 7); 
             document.getElementById('maintenance-notice').classList.toggle('hidden', !out); 
@@ -127,34 +123,18 @@
             return !out; 
         }
         
-        // 管理画面のアクセス制限
         function checkAdminAccess() { 
             if (isAdminAuthenticated) { 
                 showSection('admin-view'); 
-                // ★ 管理画面がデータを取得する関数を修正
-        async function syncFromCloud() { 
-            try { 
-                // GASに対して「データをください(action=getData)」とお願いする
-                const res = await fetch(GAS_URL + "?action=getData"); 
-                if (!res.ok) throw new Error("通信エラー");
-                reservations = await res.json(); 
-                renderAdminTables(); 
-            } catch (e) { 
-                console.error("データ取得失敗", e); 
-                alert("データの読み込みに失敗しました。URLや権限を確認してください。");
-            } 
-        }(); 
+                syncFromCloud(); 
             } 
             else if (prompt("管理画面用パスワードを入力してください") === ADMIN_PASSWORD) { 
                 isAdminAuthenticated = true; 
                 showSection('admin-view'); 
                 syncFromCloud(); 
-            } else {
-                alert("パスワードが正しくありません");
-            }
+            } else { alert("パスワードが正しくありません"); }
         }
 
-        // 店舗選択時の挙動（車検課のパスワード確認）
         document.getElementById('ss-name').addEventListener('change', function() {
             if (this.value === "車検課") {
                 if (prompt("車検課専用パスワードを入力してください") === ADMIN_PASSWORD) {
@@ -165,24 +145,22 @@
                     this.value = "";
                     isShakenkaMode = false;
                 }
-            } else {
-                isShakenkaMode = false;
-            }
+            } else { isShakenkaMode = false; }
             renderCalendar(); 
         });
 
-        function showSection(id) { 
-            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden')); 
-            document.getElementById(id).classList.remove('hidden'); 
-        }
+        function showSection(id) { document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
 
+        // ★ 管理画面のデータ取得用関数
         async function syncFromCloud() { 
             try { 
-                const res = await fetch(GAS_URL); 
+                const res = await fetch(GAS_URL + "?action=getData"); 
+                if (!res.ok) throw new Error("通信エラー");
                 reservations = await res.json(); 
                 renderAdminTables(); 
             } catch (e) { 
-                console.error("データの取得に失敗しました", e); 
+                console.error("データ取得失敗", e); 
+                alert("データの読み込みに失敗しました。");
             } 
         }
 
@@ -200,64 +178,38 @@
 
         function selectCourse(n, t) {
             if (!checkBusinessHours()) return;
-            currentCourse = n; 
-            currentType = t;
+            currentCourse = n; currentType = t;
             document.getElementById('display-course-name').innerText = n;
             const memoField = document.getElementById('repair-memo');
-            if (n === '一般整備') { 
-                memoField.classList.remove('hidden'); 
-            } else { 
-                memoField.classList.add('hidden'); 
-                memoField.value = ''; 
-            }
+            if (n === '一般整備') { memoField.classList.remove('hidden'); } 
+            else { memoField.classList.add('hidden'); memoField.value = ''; }
             renderCalendar(); 
             showSection('booking-section');
         }
 
-        function changeMonth(diff) { 
-            viewDate.setMonth(viewDate.getMonth() + diff); 
-            renderCalendar(); 
-        }
+        function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
 
         function renderCalendar() {
-            const grid = document.getElementById('calendar-grid'); 
-            grid.innerHTML = '';
-            const y = viewDate.getFullYear();
-            const m = viewDate.getMonth();
+            const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
+            const y = viewDate.getFullYear(), m = viewDate.getMonth();
             document.getElementById('calendar-month').innerText = `${y}年 ${m+1}月`;
-            
             ['日','月','火','水','木','金','土'].forEach(d => grid.insertAdjacentHTML('beforeend', `<div class="pb-2 text-gray-400 font-bold">${d}</div>`));
-            
-            const first = new Date(y, m, 1).getDay();
-            const last = new Date(y, m + 1, 0).getDate();
-            const deadline = new Date(); 
-            deadline.setDate(deadline.getDate() + 4);
-            
+            const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
+            const deadline = new Date(); deadline.setDate(deadline.getDate() + 4);
             for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
             
             for(let i=1; i<=last; i++) {
-                const dObj = new Date(y, m, i);
-                const dKey = `${y}/${m+1}/${i}`;
+                const dObj = new Date(y, m, i), dKey = `${y}/${m+1}/${i}`;
                 const count = reservations.filter(r => formatDateOnly(r.shakenDate) === dKey && String(r.course).includes('車検')).length;
                 const isHoliday = isClosedDay(dObj);
                 const dayDiv = document.createElement('div');
                 dayDiv.className = `p-2 border rounded-xl text-center h-14 flex flex-col items-center justify-center calendar-day font-bold transition-all`;
                 
-                if (!isShakenkaMode && isHoliday) { 
-                    dayDiv.classList.add('holiday'); 
-                    dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`; 
-                }
-                else if (!isShakenkaMode && dObj < deadline) { 
-                    dayDiv.classList.add('disabled'); 
-                    dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-gray-300">締切</span>`; 
-                }
-                else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) { 
-                    dayDiv.classList.add('full'); 
-                    dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">満</span>`; 
-                }
+                if (!isShakenkaMode && isHoliday) { dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`; }
+                else if (!isShakenkaMode && dObj < deadline) { dayDiv.classList.add('disabled'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-gray-300">締切</span>`; }
+                else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) { dayDiv.classList.add('full'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">満</span>`; }
                 else {
-                    dayDiv.classList.add('available'); 
-                    dayDiv.innerHTML = `<span>${i}</span><span class="text-blue-500">○</span>`;
+                    dayDiv.classList.add('available'); dayDiv.innerHTML = `<span>${i}</span><span class="text-blue-500">○</span>`;
                     dayDiv.onclick = () => {
                         selectedDateStr = dKey;
                         document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected-day'));
@@ -272,35 +224,14 @@
 
         async function completeBooking() {
             const ss = document.getElementById('ss-name').value;
-            const n = document.getElementById('user-name').value;
-            const m = document.getElementById('car-model').value;
-            const c = document.getElementById('car-number').value;
-            const memo = document.getElementById('repair-memo').value;
-            
+            const n = document.getElementById('user-name').value, m = document.getElementById('car-model').value, c = document.getElementById('car-number').value, memo = document.getElementById('repair-memo').value;
             if (!ss || !n || !m || !c || !selectedDateStr) return alert('未入力の項目があります');
-            
             document.getElementById('submit-btn').disabled = true;
-            const data = {
-                id: Date.now(), 
-                shakenDate: selectedDateStr, 
-                arrivalDate: calculatedArrivalDate, 
-                ss: ss, 
-                course: currentCourse, 
-                name: n, 
-                carModel: m, 
-                carNum: c, 
-                type: currentType, 
-                memo: memo
-            };
-            
+            const data = { id: Date.now(), shakenDate: selectedDateStr, arrivalDate: calculatedArrivalDate, ss: ss, course: currentCourse, name: n, carModel: m, carNum: c, type: currentType, memo: memo };
             try { 
                 await fetch(GAS_URL, {method:"POST", mode:"no-cors", body:JSON.stringify(data)}); 
-                alert('予約が完了しました'); 
-                location.reload(); 
-            } catch(e){ 
-                alert('送信エラーが発生しました'); 
-                document.getElementById('submit-btn').disabled = false;
-            }
+                alert('予約が完了しました'); location.reload(); 
+            } catch(e){ alert('送信エラー'); document.getElementById('submit-btn').disabled = false; }
         }
 
         function switchAdminTab(t) {
@@ -311,27 +242,22 @@
         }
 
         function renderAdminTables() {
-            const sl = document.getElementById('admin-shaken-list'); 
-            sl.innerHTML = '';
+            const sl = document.getElementById('admin-shaken-list'); sl.innerHTML = '';
             reservations.filter(r => String(r.course).includes('車検')).sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate)).forEach(r => {
                 sl.insertAdjacentHTML('beforeend', `<tr><td class="p-4 text-blue-700 font-bold">${formatDateOnly(r.shakenDate)}</td><td class="p-4">${r.course}</td><td class="p-4">${r.ss}</td><td class="p-4">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4">${r.carNum}</td></tr>`);
             });
-            
-            const fl = document.getElementById('admin-factory-list'); 
-            fl.innerHTML = '';
-            reservations.filter(r => r.course === 'セーフティ車検' || r.course === '一般整備').sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate)).forEach(r => {
-                fl.insertAdjacentHTML('beforeend', `<tr><td class="p-4 text-orange-600 font-bold">${formatDateOnly(r.arrivalDate || r.shakenDate)}</td><td class="p-4 text-gray-400">${formatDateOnly(r.shakenDate)}</td><td class="p-4">${r.course==='一般整備'?'一般':'セーフティ'}</td><td class="p-4">${r.ss}</td><td class="p-4">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4">${r.carNum}</td><td class="p-4 text-red-600 font-black">${r.memo || '-'}</td></tr>`);
+            const fl = document.getElementById('admin-factory-list'); fl.innerHTML = '';
+            reservations.filter(r => r.type === 'factory' || r.course === 'セーフティ車検').sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate)).forEach(r => {
+                fl.insertAdjacentHTML('beforeend', `<tr><td class="p-4 text-orange-600 font-bold">${formatDateOnly(r.arrivalDate || r.shakenDate)}</td><td class="p-4 text-gray-400">${formatDateOnly(r.shakenDate)}</td><td class="p-4">${r.type==='factory'?'一般':'セーフティ'}</td><td class="p-4">${r.ss}</td><td class="p-4">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4">${r.carNum}</td><td class="p-4 text-red-600 font-black">${r.memo || '-'}</td></tr>`);
             });
         }
 
         window.onload = async () => { 
             checkBusinessHours(); 
             try { 
-                const res = await fetch(GAS_URL); 
+                const res = await fetch(GAS_URL + "?action=getData"); 
                 reservations = await res.json(); 
-            } catch(e) { 
-                console.log("初期データの読み込みに失敗しましたが、継続します"); 
-            } 
+            } catch(e) { console.log("初期読み込みスキップ"); } 
             document.getElementById('main-loading').classList.add('hidden'); 
             renderCalendar(); 
         };
