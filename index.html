@@ -104,12 +104,12 @@
 
     <script>
         // 設定情報の修正
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxtaBrC5eE6tuJtjGXuy_BXVs3EX2nz_5uY5LL8jypu14KQDQbFJpVljOb-fh8yQXLnvw/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzsvf_vaQqw7kek_OiUf_VuFsIM29TUXKRy65Y9BD6kdZhfyhgpkJwPGkfrE1U_Hz7KwQ/exec"; 
         const ADMIN_PASSWORD = "ss1234";
         const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
         
         let isAdminAuthenticated = false;
-        let reservations = [];
+        let reservations = []
         let currentCourse = '';
         let currentType = '';
         let selectedDateStr = '';
@@ -131,7 +131,19 @@
         function checkAdminAccess() { 
             if (isAdminAuthenticated) { 
                 showSection('admin-view'); 
-                syncFromCloud(); 
+                // ★ 管理画面がデータを取得する関数を修正
+        async function syncFromCloud() { 
+            try { 
+                // GASに対して「データをください(action=getData)」とお願いする
+                const res = await fetch(GAS_URL + "?action=getData"); 
+                if (!res.ok) throw new Error("通信エラー");
+                reservations = await res.json(); 
+                renderAdminTables(); 
+            } catch (e) { 
+                console.error("データ取得失敗", e); 
+                alert("データの読み込みに失敗しました。URLや権限を確認してください。");
+            } 
+        }(); 
             } 
             else if (prompt("管理画面用パスワードを入力してください") === ADMIN_PASSWORD) { 
                 isAdminAuthenticated = true; 
