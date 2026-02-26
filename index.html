@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>車検予約システム v29.0</title>
+    <title>車検予約管理 v32.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
@@ -13,39 +13,37 @@
         .calendar-day.holiday { color: #f87171; background-color: #fef2f2; cursor: not-allowed; }
         .calendar-day.available:hover { background-color: #ebf8ff; cursor: pointer; }
         .selected-day { background-color: #3b82f6 !important; color: white !important; }
-        .tab-active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
-        .out-of-hours { filter: grayscale(1); opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-2 md:p-6 text-slate-900">
-    <div id="app" class="bg-white rounded-2xl shadow-2xl p-4 md:p-8 max-w-7xl w-full mx-auto">
+    <div id="app" class="bg-white rounded-2xl shadow-2xl p-4 md:p-8 max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b pb-6">
             <h1 class="text-2xl font-bold text-gray-800 flex items-center cursor-pointer" onclick="location.reload()">
-                <span class="bg-blue-600 text-white p-2 rounded-lg mr-3">🏪</span> 車検予約
+                <span class="bg-blue-600 text-white p-2 rounded-lg mr-3">🏪</span> 車検予約管理システム
             </h1>
-            <div class="flex bg-gray-200 p-1 rounded-xl shadow-inner text-sm font-bold">
-                <button onclick="location.reload()" class="px-6 py-2 rounded-lg transition hover:text-blue-600">お客様予約</button>
+            <div class="flex bg-gray-200 p-1 rounded-xl text-sm font-bold">
+                <button onclick="location.reload()" class="px-6 py-2 rounded-lg transition hover:text-blue-600">新規登録</button>
                 <button onclick="checkAdminAccess()" class="px-6 py-2 rounded-lg transition text-gray-600 hover:text-blue-600">管理画面</button>
             </div>
         </div>
 
-        <div id="maintenance-notice" class="hidden mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-700 rounded-2xl text-center font-black">只今、受付時間外です（22:00 ～ 翌07:00）</div>
-
         <div id="main-content-area">
             <div id="course-selection-section" class="view-section">
-                <div id="main-loading" class="text-center py-4 text-blue-500 animate-pulse text-sm">最新の状況を確認中...</div>
+                <div id="main-loading" class="text-center py-4 text-blue-500 animate-pulse text-sm">状況確認中...</div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <button onclick="selectCourse('スタンダード車検', 'shaken')" class="bg-white border-2 border-blue-100 hover:border-blue-500 rounded-3xl p-8 transition shadow-sm">
                         <div class="text-4xl mb-4">⏱️</div><h3 class="text-xl font-bold text-blue-900">スタンダード車検</h3>
-                        <div class="mt-8 bg-blue-50 py-3 rounded-xl text-blue-600 transition">選択する</div>
+                        <p class="text-xs text-gray-500 mt-2">（当日入庫・当日車検）</p>
+                        <div class="mt-4 bg-blue-50 py-3 rounded-xl text-blue-600">選択</div>
                     </button>
                     <button onclick="selectCourse('セーフティ車検', 'shaken')" class="bg-white border-2 border-orange-100 hover:border-orange-500 rounded-3xl p-8 transition shadow-sm">
                         <div class="text-4xl mb-4">🛡️</div><h3 class="text-xl font-bold text-orange-900">セーフティ車検</h3>
-                        <div class="mt-8 bg-orange-50 py-3 rounded-xl text-orange-600 transition">選択する</div>
+                        <p class="text-xs text-gray-500 mt-2">（本日入庫・翌営業日車検）</p>
+                        <div class="mt-4 bg-orange-50 py-3 rounded-xl text-orange-600">選択</div>
                     </button>
                     <button onclick="selectCourse('一般整備', 'factory')" class="bg-white border-2 border-green-100 hover:border-green-500 rounded-3xl p-8 transition shadow-sm">
                         <div class="text-4xl mb-4">🔧</div><h3 class="text-xl font-bold text-green-900">一般整備・修理</h3>
-                        <div class="mt-8 bg-green-50 py-3 rounded-xl text-green-600 transition">選択する</div>
+                        <div class="mt-4 bg-green-50 py-3 rounded-xl text-green-600">選択</div>
                     </button>
                 </div>
             </div>
@@ -54,135 +52,69 @@
                 <button onclick="showSection('course-selection-section')" class="text-blue-500 mb-6 font-bold flex items-center">＜ 戻る</button>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                     <div class="bg-white border rounded-2xl p-6 shadow-sm">
-                        <div class="flex justify-between items-center mb-6 bg-slate-800 text-white p-3 rounded-xl">
+                        <div class="flex justify-between items-center mb-6 bg-slate-800 text-white p-3 rounded-xl text-sm">
                             <button onclick="changeMonth(-1)" class="px-4">＜</button><h3 id="calendar-month"></h3><button onclick="changeMonth(1)" class="px-4">＞</button>
                         </div>
                         <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center text-[10px]"></div>
+                        <p class="mt-4 text-[10px] text-gray-400 font-bold">※カレンダーでは「工場入庫日」を選択してください</p>
                     </div>
                     <div class="bg-gray-50 p-8 rounded-3xl border space-y-4">
-                        <select id="ss-name" class="w-full border rounded-lg p-3 text-sm font-bold bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="ss-name" class="w-full border rounded-lg p-3 text-sm font-bold bg-white outline-none">
                             <option value="">店舗を選択</option>
-                            <option value="車検課" style="background-color: #eff6ff; font-weight: bold; color: #1e40af;">【専用】車検課</option>
+                            <option value="車検課" style="color: #1e40af;">【専用】車検課</option>
                             <option value="板橋ss">板橋ss</option><option value="志村ss">志村ss</option><option value="小茂根ss">小茂根ss</option><option value="赤羽西ss">赤羽西ss</option><option value="東坂下ss">東坂下ss</option><option value="高島平ss">高島平ss</option><option value="武蔵関ss">武蔵関ss</option>
                         </select>
                         <input type="text" id="user-name" class="w-full border rounded-lg p-3 text-sm" placeholder="お名前">
                         <input type="text" id="car-model" class="w-full border rounded-lg p-3 text-sm" placeholder="車種">
                         <input type="text" id="car-number" class="w-full border rounded-lg p-3 text-sm" placeholder="ナンバー">
-                        <input type="text" id="repair-memo" class="w-full border border-green-300 bg-green-50 rounded-lg p-3 text-sm hidden focus:ring-2 focus:ring-green-500" placeholder="修理内容をご入力ください">
-                        <div class="bg-white p-4 rounded-xl border border-blue-100 text-blue-800 italic">
-                            <p id="display-course-name" class="text-lg font-bold"></p>
-                            <p class="mt-1">予約日：<span id="shaken-date-display">-</span></p>
+                        <input type="text" id="repair-memo" class="w-full border border-green-300 bg-green-50 rounded-lg p-3 text-sm hidden" placeholder="修理内容をご入力ください">
+                        
+                        <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-inner">
+                            <p id="display-course-name" class="text-lg font-bold text-blue-900 border-b pb-2 mb-2"></p>
+                            <div class="flex flex-col gap-1">
+                                <p class="text-sm font-bold">工場入庫日：<span id="arrival-date-display" class="text-blue-600">未選択</span></p>
+                                <p id="shaken-date-area" class="text-sm font-bold text-red-600">車検実施日：<span id="shaken-date-display">-</span></p>
+                            </div>
                         </div>
-                        <button id="submit-btn" onclick="completeBooking()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition">予約を確定する</button>
+                        
+                        <button id="submit-btn" onclick="completeBooking()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition">この内容で登録する</button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div id="admin-view" class="view-section hidden">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex space-x-4 border-b overflow-x-auto">
-                    <button id="tab-shaken" onclick="switchAdminTab('shaken')" class="pb-4 px-4 tab-active text-blue-600 font-bold whitespace-nowrap">📋 車検予定</button>
-                    <button id="tab-factory" onclick="switchAdminTab('factory')" class="pb-4 px-4 text-gray-400 font-bold whitespace-nowrap">🔧 工場入庫予定</button>
-                </div>
-                <button onclick="syncFromCloud()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold">🔃 更新</button>
-            </div>
-            <div id="shaken-table-area" class="admin-content overflow-x-auto">
-                <table class="min-w-full text-left bg-white border text-sm font-bold">
-                    <thead class="bg-blue-600 text-white"><tr><th class="p-4">車検日</th><th class="p-4">コース</th><th class="p-4">店舗</th><th class="p-4">名前</th><th class="p-4">車種</th><th class="p-4">ナンバー</th></tr></thead>
-                    <tbody id="admin-shaken-list" class="divide-y text-slate-700"></tbody>
-                </table>
-            </div>
-            <div id="factory-table-area" class="admin-content hidden overflow-x-auto">
-                <table class="min-w-full text-left bg-white border text-sm font-bold">
-                    <thead class="bg-slate-700 text-white"><tr><th class="p-4">入庫日</th><th class="p-4">作業日</th><th class="p-4">区分</th><th class="p-4">店舗</th><th class="p-4">名前</th><th class="p-4">車種</th><th class="p-4">ナンバー</th><th class="p-4 text-green-300">修理メモ</th></tr></thead>
-                    <tbody id="admin-factory-list" class="divide-y text-slate-700"></tbody>
-                </table>
             </div>
         </div>
     </div>
 
     <script>
-        // ★ ここをご自身のURLに書き換えてください
-        const GAS_URL = "https://script.google.com/macros/s/AKfycby3RgsJP_s0rXhUrH-Tz4v5fDUieV36lgqt1ml5B3EJDHOSqa6dCeJ1ZvwiuMsztzYWzg/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyXqXETjbV3TR2i75iRx_Qrrl6Cg03KOfwl_vcoUB6ESrkJyAIYmqNbqr88KqTYUi3X/exec"; 
         const ADMIN_PASSWORD = "ss1234";
         const HOLIDAYS = ["2026/1/1","2026/1/12","2026/2/11","2026/2/23","2026/3/20","2026/4/29","2026/5/3","2026/5/4","2026/5/5","2026/5/6","2026/7/20","2026/8/11","2026/9/21","2026/9/22","2026/9/23","2026/10/12","2026/11/3","2026/11/23"];
         
-        let isAdminAuthenticated = false, reservations = [];
-        let currentCourse = '', currentType = '', selectedDateStr = '', calculatedArrivalDate = '';
-        let viewDate = new Date(), isShakenkaMode = false;
+        let isAdminAuthenticated = false, reservations = [], currentCourse = '', currentType = '', selectedArrivalDate = '', calculatedShakenDate = '', viewDate = new Date(), isShakenkaMode = false;
 
         function formatDateOnly(dateStr) { if (!dateStr) return "-"; return String(dateStr).split('T')[0].split(' ')[0].replace(/-/g, '/'); }
-        
-        function checkBusinessHours() { 
-            if (isShakenkaMode) return true;
-            const hour = new Date().getHours(); 
-            const out = (hour >= 22 || hour < 7); 
-            document.getElementById('maintenance-notice').classList.toggle('hidden', !out); 
-            document.getElementById('main-content-area').classList.toggle('out-of-hours', out); 
-            return !out; 
-        }
-        
+        function isClosedDay(date) { const d = new Date(date); const ds = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; return d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.includes(ds); }
+        function getNextBusinessDay(ds) { let d = new Date(ds); do { d.setDate(d.getDate() + 1); } while (isClosedDay(d)); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+
         function checkAdminAccess() { 
-            if (isAdminAuthenticated) { showSection('admin-view'); syncFromCloud(); } 
-            else if (prompt("管理画面用パスワードを入力してください") === ADMIN_PASSWORD) { 
-                isAdminAuthenticated = true; 
-                showSection('admin-view'); 
-                syncFromCloud(); 
-            } else { alert("パスワードが正しくありません"); }
+            if (isAdminAuthenticated) { syncFromCloud(); } 
+            else if (prompt("管理画面用パスワード") === ADMIN_PASSWORD) { isAdminAuthenticated = true; syncFromCloud(); }
         }
 
         document.getElementById('ss-name').addEventListener('change', function() {
             if (this.value === "車検課") {
-                if (prompt("車検課専用パスワードを入力してください") === ADMIN_PASSWORD) {
-                    isShakenkaMode = true;
-                    alert("車検課モード：すべての制限を解除しました");
-                } else {
-                    alert("パスワードが正しくありません");
-                    this.value = "";
-                    isShakenkaMode = false;
-                }
+                if (prompt("車検課パスワード") === ADMIN_PASSWORD) { isShakenkaMode = true; alert("管理者モード"); }
+                else { this.value = ""; isShakenkaMode = false; }
             } else { isShakenkaMode = false; }
             renderCalendar(); 
         });
 
-        function showSection(id) { document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
-
-        async function syncFromCloud() { 
-            try { 
-                const res = await fetch(GAS_URL + "?action=getData"); 
-                if (!res.ok) throw new Error("通信エラー");
-                reservations = await res.json(); 
-                renderAdminTables(); 
-            } catch (e) { 
-                console.error("データ取得失敗", e); 
-            } 
-        }
-
-        function isClosedDay(date) { 
-            const d = new Date(date);
-            const ds = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; 
-            return d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.includes(ds); 
-        }
-
-        function getPreviousBusinessDay(ds) { 
-            let d = new Date(ds); 
-            do { d.setDate(d.getDate() - 1); } while (isClosedDay(d)); 
-            return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; 
-        }
-
         function selectCourse(n, t) {
-            if (!checkBusinessHours()) return;
             currentCourse = n; currentType = t;
             document.getElementById('display-course-name').innerText = n;
             const memoField = document.getElementById('repair-memo');
-            if (n === '一般整備') { memoField.classList.remove('hidden'); } 
-            else { memoField.classList.add('hidden'); memoField.value = ''; }
-            renderCalendar(); 
-            showSection('booking-section');
+            n === '一般整備' ? memoField.classList.remove('hidden') : memoField.classList.add('hidden');
+            renderCalendar(); showSection('booking-section');
         }
-
-        function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
 
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
@@ -195,22 +127,23 @@
             
             for(let i=1; i<=last; i++) {
                 const dObj = new Date(y, m, i), dKey = `${y}/${m+1}/${i}`;
-                const count = reservations.filter(r => formatDateOnly(r.shakenDate) === dKey && String(r.course).includes('車検')).length;
+                const count = reservations.filter(r => formatDateOnly(r.arrivalDate) === dKey && String(r.course).includes('車検')).length;
                 const isHoliday = isClosedDay(dObj);
                 const dayDiv = document.createElement('div');
-                dayDiv.className = `p-2 border rounded-xl text-center h-14 flex flex-col items-center justify-center calendar-day font-bold transition-all`;
+                dayDiv.className = `p-2 border rounded-xl text-center h-14 calendar-day font-bold transition-all flex flex-col items-center justify-center`;
                 
-                if (!isShakenkaMode && isHoliday) { dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">休</span>`; }
-                else if (!isShakenkaMode && dObj < deadline) { dayDiv.classList.add('disabled'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px] text-gray-300">締切</span>`; }
-                else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) { dayDiv.classList.add('full'); dayDiv.innerHTML = `<span>${i}</span><span class="text-[8px]">満</span>`; }
+                if (!isShakenkaMode && isHoliday) { dayDiv.classList.add('holiday'); dayDiv.innerHTML = `<span>${i}</span><span class=\"text-[8px]\">休</span>`; }
+                else if (!isShakenkaMode && dObj < deadline) { dayDiv.classList.add('disabled'); dayDiv.innerHTML = `<span>${i}</span><span class=\"text-[8px] text-gray-300\">締切</span>`; }
+                else if (!isShakenkaMode && currentType === 'shaken' && count >= 5) { dayDiv.classList.add('full'); dayDiv.innerHTML = `<span>${i}</span><span class=\"text-[8px]\">満</span>`; }
                 else {
-                    dayDiv.classList.add('available'); dayDiv.innerHTML = `<span>${i}</span><span class="text-blue-500">○</span>`;
+                    dayDiv.classList.add('available'); dayDiv.innerHTML = `<span>${i}</span><span class=\"text-blue-500\">○</span>`;
                     dayDiv.onclick = () => {
-                        selectedDateStr = dKey;
+                        selectedArrivalDate = dKey;
                         document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected-day'));
                         dayDiv.classList.add('selected-day');
-                        document.getElementById('shaken-date-display').innerText = dKey;
-                        calculatedArrivalDate = (currentCourse === 'セーフティ車検') ? getPreviousBusinessDay(dKey) : dKey;
+                        document.getElementById('arrival-date-display').innerText = dKey;
+                        calculatedShakenDate = (currentCourse === 'セーフティ車検') ? getNextBusinessDay(dKey) : dKey;
+                        document.getElementById('shaken-date-display').innerText = calculatedShakenDate;
                     };
                 }
                 grid.appendChild(dayDiv);
@@ -220,42 +153,19 @@
         async function completeBooking() {
             const ss = document.getElementById('ss-name').value;
             const n = document.getElementById('user-name').value, m = document.getElementById('car-model').value, c = document.getElementById('car-number').value, memo = document.getElementById('repair-memo').value;
-            if (!ss || !n || !m || !c || !selectedDateStr) return alert('未入力の項目があります');
+            if (!ss || !n || !m || !c || !selectedArrivalDate) return alert('未入力の項目があります');
             document.getElementById('submit-btn').disabled = true;
-            const data = { id: Date.now(), shakenDate: selectedDateStr, arrivalDate: calculatedArrivalDate, ss: ss, course: currentCourse, name: n, carModel: m, carNum: c, type: currentType, memo: memo };
+            const data = { id: Date.now(), arrivalDate: selectedArrivalDate, shakenDate: calculatedShakenDate, ss: ss, course: currentCourse, name: n, carModel: m, carNum: c, type: currentType, memo: memo };
             try { 
                 await fetch(GAS_URL, {method:"POST", mode:"no-cors", body:JSON.stringify(data)}); 
-                alert('予約が完了しました'); location.reload(); 
+                alert('登録しました'); location.reload(); 
             } catch(e){ alert('送信エラー'); document.getElementById('submit-btn').disabled = false; }
         }
 
-        function switchAdminTab(t) {
-            document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById(`${t}-table-area`).classList.remove('hidden');
-            document.getElementById('tab-shaken').className = (t==='shaken') ? "pb-4 px-4 tab-active text-blue-600 font-bold whitespace-nowrap" : "pb-4 px-4 text-gray-400 font-bold whitespace-nowrap";
-            document.getElementById('tab-factory').className = (t==='factory') ? "pb-4 px-4 tab-active text-slate-700 font-bold border-b-4 border-slate-700 whitespace-nowrap" : "pb-4 px-4 text-gray-400 font-bold whitespace-nowrap";
-        }
-
-        function renderAdminTables() {
-            const sl = document.getElementById('admin-shaken-list'); sl.innerHTML = '';
-            reservations.filter(r => String(r.course).includes('車検')).sort((a,b)=>new Date(a.shakenDate)-new Date(b.shakenDate)).forEach(r => {
-                sl.insertAdjacentHTML('beforeend', `<tr><td class="p-4 text-blue-700 font-bold">${formatDateOnly(r.shakenDate)}</td><td class="p-4">${r.course}</td><td class="p-4">${r.ss}</td><td class="p-4">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4">${r.carNum}</td></tr>`);
-            });
-            const fl = document.getElementById('admin-factory-list'); fl.innerHTML = '';
-            reservations.filter(r => r.type === 'factory' || r.course === 'セーフティ車検').sort((a,b)=>new Date(a.arrivalDate || a.shakenDate)-new Date(b.arrivalDate || b.shakenDate)).forEach(r => {
-                fl.insertAdjacentHTML('beforeend', `<tr><td class="p-4 text-orange-600 font-bold">${formatDateOnly(r.arrivalDate || r.shakenDate)}</td><td class="p-4 text-gray-400">${formatDateOnly(r.shakenDate)}</td><td class="p-4">${r.type==='factory'?'一般':'セーフティ'}</td><td class="p-4">${r.ss}</td><td class="p-4">${r.name}</td><td class="p-4">${r.carModel}</td><td class="p-4">${r.carNum}</td><td class="p-4 text-red-600 font-black">${r.memo || '-'}</td></tr>`);
-            });
-        }
-
-        window.onload = async () => { 
-            checkBusinessHours(); 
-            try { 
-                const res = await fetch(GAS_URL + "?action=getData"); 
-                reservations = await res.json(); 
-            } catch(e) { console.log("初期読み込みスキップ"); } 
-            document.getElementById('main-loading').classList.add('hidden'); 
-            renderCalendar(); 
-        };
+        function showSection(id) { document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+        function changeMonth(diff) { viewDate.setMonth(viewDate.getMonth() + diff); renderCalendar(); }
+        async function syncFromCloud() { try { const res = await fetch(GAS_URL + "?action=getData"); reservations = await res.json(); } catch(e) {} }
+        window.onload = async () => { await syncFromCloud(); document.getElementById('main-loading').classList.add('hidden'); renderCalendar(); };
     </script>
 </body>
 </html>
